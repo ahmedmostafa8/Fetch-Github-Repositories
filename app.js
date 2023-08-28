@@ -1,80 +1,95 @@
-let input = document.querySelector(".repos__input");
-let btn = document.querySelector(".repos__btn");
-let reposList = document.querySelector(".repos__list");
-let noDataToShow = document.querySelector(".noData");
+"use strict";
 
-btn.addEventListener("click", (e) => {
-  getRepos()
-});
+// Selectors
+const input = document.querySelector(".repos__input"),
+  btn = document.querySelector(".repos__btn"),
+  reposList = document.querySelector(".repos__list"),
+  noDataToShow = document.querySelector(".noData");
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    getRepos()
+
+
+
+// Variables
+const baseUrl = "https://api.github.com"
+
+
+
+
+// Functions
+async function getReposData() {
+  try {
+    const response = await fetch(`${baseUrl}/users/${input.value}/repos`);
+    const data = await response.json();
+
+    renderReposToPage(data);
+  } catch(err) {
+    reposList.innerHTML = "";
+    noDataToShow.innerHTML = "Username is not valid or the server does not get the data";
   }
-});
+}
+
+
+function createRepoStructure({name, stargazers_count, data_html}) {
+  const repoStructure = `
+  <li class="repos__item">
+    <div class="repos__text">${name}</div>
+    <div class="repos__text__details">
+      <div class="repos__stars">${stargazers_count}</div>
+      <button type=button class="repos__visit">
+        <a href=${data_html} target="_blank">Visit</a>
+      </button>
+    </div>
+  </li>`
+
+  reposList.innerHTML += repoStructure
+}
+
+
+function renderReposToPage(data) {
+  if (data.length === 0) {
+    noDataToShow.innerHTML = "Username is not valid or the server does not get the data";
+    return
+  }
+
+  data.forEach(obj => createRepoStructure(obj));
+  renderNumOfRepos(data)
+}
+
+
+function renderNumOfRepos(data) {
+  const reposLengthEle = document.createElement("div");
+  reposLengthEle.className = "repos__length";
+  const numberOfRepos = document.createTextNode("Number OF Repositories");
+  reposLengthEle.appendChild(numberOfRepos);
+
+  const theSpan = document.createElement("span");
+  theSpan.className = "lengthOfRepos";
+  const dataLength = document.createTextNode(data.length);
+  theSpan.appendChild(dataLength);
+  reposLengthEle.appendChild(theSpan);
+  reposList.prepend(reposLengthEle);
+}
+
 
 function getRepos() {
   if (input.value === "") {
     reposList.innerHTML = "";
-    noDataToShow.innerHTML = "Please Write GitHub UserName"
-  } else {
-    reposList.innerHTML = "";
-    noDataToShow.innerHTML = ""
-    async function getData() {
-      let response = await fetch(`https://api.github.com/users/${input.value}/repos`)
-      let data = await response.json();
-      return data;
-    }
-    getData().then((data) => {
-      try {
-        if (data.length === 0) {
-          noDataToShow.innerHTML = "Username Is Not Valid"
-        } else {
-          let reposLength = document.createElement("div");
-          reposLength.className = "repos__length";
-          let resposLengthText = document.createTextNode("Number OF Repositories")
-          reposLength.appendChild(resposLengthText)
-          let theSpan = document.createElement("span")
-          theSpan.className = "lengthOfRepos"
-          let dataLength = document.createTextNode(data.length)
-          theSpan.appendChild(dataLength)
-          reposLength.appendChild(theSpan)
-          reposList.appendChild(reposLength)
-          data.forEach((ele) => {
-            let reposItem = document.createElement("li")
-            let reposText = document.createElement("div")
-            let reposTextDeatils = document.createElement("div")
-            let reposStar = document.createElement("div")
-            let reposVisit = document.createElement("div")
-    
-            reposItem.className = "repos__item"
-            reposText.className = "repos__text"
-            reposTextDeatils.className = "repos__text__deatils"
-            reposStar.className = "repos__stars"
-            reposVisit.className = "repos__visit"
-    
-            let visitLink = document.createElement("a")
-            let reposLinkData = document.createTextNode("Visit")
-            visitLink.href = `https://github.com/${input.value}/${ele.name}`;
-            visitLink.setAttribute("target", "_blank")
-            visitLink.append(reposLinkData)
-            reposVisit.appendChild(visitLink)
-    
-            let reposTextData = document.createTextNode(ele.name)
-            let reposStarData = document.createTextNode(ele.stargazers_count)
-            
-            reposText.appendChild(reposTextData);
-            reposStar.appendChild(reposStarData)
-    
-            reposTextDeatils.append(reposStar,reposVisit)
-            reposItem.append(reposText,reposTextDeatils)
-            reposList.append(reposItem)
-          })
-        }
-      } catch(err) {
-        reposList.innerHTML = "";
-        noDataToShow.innerHTML = "Username Is Not Valid"
-      }
-    })
+    noDataToShow.innerHTML = "Please Write GitHub UserName";
+    return;
   }
+
+  noDataToShow.innerHTML = "";
+  reposList.innerHTML = ""
+
+  getReposData()
 }
+
+
+
+
+// Events
+btn.addEventListener("click", () => getRepos());
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") getRepos();
+});
